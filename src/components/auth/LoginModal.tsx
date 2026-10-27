@@ -134,8 +134,8 @@ export function LoginModal({
         )}
 
         <div className="p-6 space-y-6">
-          {/* Quick-Access Executive Roles Section (development only) */}
-          {process.env.NODE_ENV !== "production" && (<>
+          {/* Quick-Access Executive Roles Section */}
+          {process.env.NEXT_PUBLIC_DISABLE_DEMO_LOGIN !== "true" && (<>
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">

@@ -89,9 +89,15 @@ export async function loginAction(credentials: {
     };
   } catch (err: any) {
     console.error("Login action error:", err);
+    let message = "Sign-in failed. Please try again.";
+    if (err?.message?.includes("does not exist") || err?.code === "P2021") {
+      message = "Database tables are not created yet. Please visit /api/setup or run prisma db push.";
+    } else if (err?.message?.includes("Can't reach database") || err?.code === "P1001") {
+      message = "Cannot connect to the database. Please verify DATABASE_URL in Vercel settings.";
+    }
     return {
       success: false,
-      message: "Sign-in failed. Please try again.",
+      message,
     };
   }
 }
