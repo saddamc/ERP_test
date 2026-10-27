@@ -15,8 +15,9 @@ import {
   Award,
   ArrowRight,
   LogOut,
+  Sparkles,
 } from "lucide-react";
-import { loginAction } from "@/server/actions/auth.actions";
+import { loginAction, autoLoginAction } from "@/server/actions/auth.actions";
 import { UserSession } from "@/server/auth/auth.service";
 
 interface LoginModalProps {
@@ -85,7 +86,29 @@ export function LoginModal({
     }
   };
 
-  // Development only: sign in as a seeded demo user (seed password "pass123").
+  // Instant 1-click auto-login for frictionless customer review
+  const handleAutoLogin = async () => {
+    setLoading(true);
+    setFeedback(null);
+    try {
+      const res = await autoLoginAction();
+      if (res.success && res.user) {
+        setFeedback({ type: "success", message: res.message });
+        setTimeout(() => {
+          onLoginSuccess(res.user!);
+          if (onClose) onClose();
+        }, 300);
+      } else {
+        setFeedback({ type: "error", message: res.message });
+      }
+    } catch (err: any) {
+      setFeedback({ type: "error", message: err.message || "Failed to auto-sign in." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sign in as a seeded demo user (seed password "pass123").
   const handleQuickPersona = (roleUser: string) => {
     setUsername(roleUser);
     setPassword("pass123");
@@ -105,10 +128,11 @@ export function LoginModal({
             Club ERP & Executive Role-Based Authentication Portal
           </p>
 
-          {onClose && currentUser && (
+          {onClose && (
             <button
+              type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg text-xs"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg text-xs hover:bg-white/10 transition-colors"
             >
               ✕ Close
             </button>
@@ -133,7 +157,26 @@ export function LoginModal({
           </div>
         )}
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5">
+          {/* 1-Click Instant Demo Access Button for Customer Review */}
+          <button
+            type="button"
+            onClick={handleAutoLogin}
+            disabled={loading}
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-md shadow-emerald-900/20 hover:shadow-lg transition-all flex items-center justify-between group cursor-pointer disabled:opacity-50"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-white/20 backdrop-blur">
+                <Sparkles className="w-4 h-4 text-amber-300 group-hover:rotate-12 transition-transform" />
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-bold leading-tight">Instant Customer Demo Access</div>
+                <div className="text-[10px] text-emerald-100 font-normal">Explore full ERP with auto-login (No password required)</div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-1 transition-transform" />
+          </button>
+
           {/* Quick-Access Executive Roles Section */}
           {process.env.NEXT_PUBLIC_DISABLE_DEMO_LOGIN !== "true" && (<>
           <div>

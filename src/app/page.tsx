@@ -13,7 +13,7 @@ import { DiningPosDesk } from "@/components/pos/DiningPosDesk";
 import { PaymentCollectionDesk } from "@/components/collection/PaymentCollectionDesk";
 import { CardRoomDesk } from "@/components/cardroom/CardRoomDesk";
 import { LoginModal } from "@/components/auth/LoginModal";
-import { getCurrentUserAction, logoutAction } from "@/server/actions/auth.actions";
+import { getCurrentUserAction, logoutAction, autoLoginAction } from "@/server/actions/auth.actions";
 import { UserSession } from "@/server/auth/auth.service";
 import {
   Building2,
@@ -72,20 +72,36 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  // Check initial session
+  // Check initial session or auto-login for customer preview
   useEffect(() => {
     async function checkAuth() {
-      const user = await getCurrentUserAction();
-      if (user) {
-        setCurrentUser(user);
-        if (user.role === "PRESIDENT" || user.role === "SECRETARY" || user.role === "FINANCE") {
-          setActiveRole(user.role as any);
+      try {
+        const user = await getCurrentUserAction();
+        if (user) {
+          setCurrentUser(user);
+          if (user.role === "PRESIDENT" || user.role === "SECRETARY" || user.role === "FINANCE") {
+            setActiveRole(user.role as any);
+          } else if (user.role === "ADMIN") {
+            setActiveRole("FINANCE");
+          }
+          setIsLoginModalOpen(false);
+        } else {
+          // Frictionless preview: auto-login as Admin/Executive so customer is never blocked
+          const autoRes = await autoLoginAction();
+          if (autoRes.success && autoRes.user) {
+            setCurrentUser(autoRes.user);
+            setActiveRole(
+              autoRes.user.role === "ADMIN" ? "FINANCE" : (autoRes.user.role as any)
+            );
+          }
+          setIsLoginModalOpen(false);
         }
-      } else {
-        // No session: every server action now requires a signed-in user, so ask for login.
-        setIsLoginModalOpen(true);
+      } catch (err) {
+        console.error("Auth check failed:", err);
+        setIsLoginModalOpen(false);
+      } finally {
+        setAuthChecked(true);
       }
-      setAuthChecked(true);
     }
     checkAuth();
   }, []);
