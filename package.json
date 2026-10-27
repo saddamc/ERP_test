@@ -40,13 +40,5 @@
     "typescript": "^5",
     "vitest": "3.2.4"
   },
-  "packageManager": "pnpm@11.20.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma",
-      "esbuild"
-    ]
-  }
+  "packageManager": "pnpm@11.20.0"
 }
