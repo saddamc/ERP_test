@@ -67,10 +67,39 @@ export default function Home() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
-  // Mark as mounted to avoid SSR/client hydration mismatch
+  // Mark as mounted and sync tab from URL query (?tab=billing)
   useEffect(() => {
     setMounted(true);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      const validTabs = [
+        "dashboard",
+        "accounts",
+        "members",
+        "billing",
+        "collection",
+        "pos",
+        "cardroom",
+        "audit",
+        "migration",
+        "vouchers",
+        "reports",
+      ];
+      if (tabParam && validTabs.includes(tabParam)) {
+        setActiveTab(tabParam as any);
+      }
+    }
   }, []);
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId as any);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tabId);
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
 
   // Check initial session or auto-login for customer preview
   useEffect(() => {
@@ -258,7 +287,7 @@ export default function Home() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`py-2.5 px-3.5 border-b-2 flex items-center gap-2 whitespace-nowrap shrink-0 text-xs font-semibold transition-all ${
                   isActive
                     ? "border-emerald-400 text-emerald-300 bg-slate-900/80 shadow-sm"
@@ -289,9 +318,9 @@ export default function Home() {
             activeRole={activeRole}
             onNavigateToTab={(t) => {
               if (t === "vouchers" || t === "reports") {
-                setActiveTab("accounts");
+                handleTabChange("accounts");
               } else {
-                setActiveTab(t as any);
+                handleTabChange(t);
               }
             }}
           />

@@ -45,6 +45,7 @@ export function BillingDesk() {
   const [history, setHistory] = useState<BillingHistoryItem[]>([]);
   const [activeSubTab, setActiveSubTab] = useState<"run" | "history">("run");
   const [runResult, setRunResult] = useState<BillingRunResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const [isPending, startTransition] = useTransition();
   const [isExecuting, setIsExecuting] = useState(false);
@@ -52,15 +53,25 @@ export function BillingDesk() {
   // Load preview whenever month or fees change
   const refreshPreview = (month: string, fees: CategoryFeeConfig) => {
     startTransition(async () => {
-      const p = await getBillingCyclePreview(month, fees);
-      setPreview(p);
+      try {
+        setError(null);
+        const p = await getBillingCyclePreview(month, fees);
+        setPreview(p);
+      } catch (err: any) {
+        console.error("Preview error:", err);
+        setError(err.message || "Failed to load billing preview.");
+      }
     });
   };
 
   const refreshHistory = () => {
     startTransition(async () => {
-      const h = await getBillingHistory();
-      setHistory(h);
+      try {
+        const h = await getBillingHistory();
+        setHistory(h);
+      } catch (err: any) {
+        console.error("History error:", err);
+      }
     });
   };
 
@@ -244,6 +255,23 @@ export function BillingDesk() {
             </div>
           </div>
 
+          {/* Error Banner */}
+          {error && (
+            <div className="bg-rose-50 border border-rose-300 rounded-xl p-4 flex items-start gap-3 text-rose-900 text-xs">
+              <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-bold text-sm">Failed to Load Billing Preview</h4>
+                <p className="mt-0.5">{error}</p>
+                <button
+                  onClick={() => refreshPreview(billingMonth, categoryFees)}
+                  className="mt-2 px-3 py-1 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Duplicate Protection Warning if already billed */}
           {preview?.alreadyBilled && (
             <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 flex items-start gap-3 text-amber-900 text-xs">
@@ -257,6 +285,19 @@ export function BillingDesk() {
                   voucher <strong>{preview.existingVoucherNo}</strong>. Double billing is blocked to
                   protect General Ledger and member balances. To view details, see the Cycle History
                   tab.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* No Members Notice */}
+          {preview && preview.totalEligibleMembers === 0 && !preview.alreadyBilled && (
+            <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 flex items-start gap-3 text-sky-900 text-xs">
+              <Info className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-bold text-sm">No Active Members Found</h4>
+                <p className="mt-0.5 text-sky-800">
+                  There are currently no active members in the directory to bill. You can add new members from the Member Directory tab or visit <code className="bg-sky-100 px-1 py-0.5 rounded">/api/setup</code> to initialize demo members.
                 </p>
               </div>
             </div>
