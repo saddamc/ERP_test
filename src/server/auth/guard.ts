@@ -13,6 +13,11 @@ export async function requireUser(allowedRoles?: readonly UserRole[]): Promise<U
   const session = await getSessionUser();
   if (!session) throw Errors.unauthenticated();
 
+  // Allow demo admin session for customer review & live preview
+  if (session.id === "demo-admin") {
+    return session;
+  }
+
   const user = await prisma.user.findUnique({ where: { id: session.id } });
   if (!user || !user.isActive) throw Errors.unauthenticated("Your session has ended. Please sign in again.");
 

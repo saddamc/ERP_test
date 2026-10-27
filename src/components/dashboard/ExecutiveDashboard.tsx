@@ -37,17 +37,64 @@ export function ExecutiveDashboard({
   onNavigateToTab,
 }: ExecutiveDashboardProps) {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const loadMetrics = () => {
+    setLoading(true);
+    setError(null);
+    getDashboardMetricsAction(activeRole)
+      .then((data) => {
+        setMetrics(data);
+      })
+      .catch((err: any) => {
+        console.error("Dashboard metrics load error:", err);
+        setError(err.message || "Failed to load executive dashboard.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
 
   useEffect(() => {
-    getDashboardMetricsAction(activeRole).then(setMetrics);
+    loadMetrics();
   }, [activeRole]);
 
-  if (!metrics) {
+  if (loading && !metrics) {
     return (
-      <div className="p-12 text-center text-gray-500 font-medium">
-        Loading executive dashboard data...
+      <div className="w-full max-w-7xl mx-auto p-8 space-y-6 animate-pulse">
+        <div className="h-24 bg-slate-200/80 rounded-2xl w-full" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="h-32 bg-slate-200/70 rounded-xl" />
+          <div className="h-32 bg-slate-200/70 rounded-xl" />
+          <div className="h-32 bg-slate-200/70 rounded-xl" />
+          <div className="h-32 bg-slate-200/70 rounded-xl" />
+        </div>
+        <div className="h-64 bg-slate-200/60 rounded-xl" />
       </div>
     );
+  }
+
+  if (error && !metrics) {
+    return (
+      <div className="w-full max-w-xl mx-auto p-8 text-center bg-white border border-rose-200 rounded-2xl shadow-sm my-12 space-y-3">
+        <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+          <AlertCircle className="w-6 h-6" />
+        </div>
+        <h3 className="font-bold text-slate-800 text-base">Dashboard Temporarily Unavailable</h3>
+        <p className="text-xs text-slate-500">{error}</p>
+        <button
+          onClick={loadMetrics}
+          className="mt-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all"
+        >
+          Retry Loading Dashboard
+        </button>
+      </div>
+    );
+  }
+
+  if (!metrics) {
+    return null;
   }
 
   return (
